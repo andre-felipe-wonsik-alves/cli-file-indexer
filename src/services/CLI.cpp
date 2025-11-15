@@ -1,11 +1,11 @@
 #include "./abstract/CLI.h"
+#include "./abstract/Index.h"
+#include "./abstract/TextProcessor.h"
 #include "./abstract/Indexer.h"
 #include "./abstract/Serializer.h"
-#include "./abstract/QueryProcessor.h"
 
-#include <iostream>
 #include <filesystem>
-#include <string>
+#include <iostream>
 
 namespace fs = std::filesystem;
 
@@ -19,41 +19,45 @@ int CLI::run(int argc, char *argv[])
 
     std::string command = argv[1];
 
-    if (command == "construir")
+    if (command == "index")
     {
         if (argc < 3)
         {
-            std::cerr << "Erro: caminho do diretório não informado.\n";
+            std::cout << "Erro: caminho do diretório não informado.\n\n";
             printUsage();
             return 1;
         }
-        handleBuildIndex(argv[2]);
+
+        const char *directoryPath = argv[2];
+        handleBuildIndex(directoryPath);
+        return 0;
     }
-    else if (command == "buscar")
+    else if (command == "search")
     {
         if (argc < 3)
         {
-            std::cerr << "Erro: termo de busca não informado.\n";
+            std::cout << "Erro: termo de busca não informado.\n\n";
             printUsage();
             return 1;
         }
-        handleSearch(argv[2]);
+
+        const char *term = argv[2];
+        handleSearch(term);
+        return 0;
     }
     else
     {
-        std::cerr << "Comando desconhecido: " << command << "\n";
+        std::cout << "Erro: comando desconhecido: " << command << "\n\n";
         printUsage();
         return 1;
     }
-
-    return 0;
 }
 
 void CLI::printUsage() const
 {
-    std::cout << "Uso:\n";
-    std::cout << "  indice construir <caminho_do_diretorio>\n";
-    std::cout << "  indice buscar <termo_de_busca>\n";
+    std::cout << "Uso:\n"
+              << "  programa index <diretorio_txt>\n"
+              << "  programa search <termo>\n";
 }
 
 void CLI::handleBuildIndex(const char *directoryPathCStr)
@@ -62,14 +66,35 @@ void CLI::handleBuildIndex(const char *directoryPathCStr)
 
     if (!fs::exists(directoryPath) || !fs::is_directory(directoryPath))
     {
-        std::cerr << "Erro: diretório inválido: " << directoryPath << "\n";
+        std::cout << "Erro: diretório inválido: " << directoryPath << "\n";
         return;
     }
 
     std::cout << "Iniciando indexação do diretório: " << directoryPath << "\n";
 
-    Indexer indexer;
-    InvertedIndex index = indexer.buildIndex(directoryPath);
+    TextProcessor textProcessor;
+    try
+    {
+        textProcessor.loadStopwords("stopwords.txt");
+    }
+    catch (const std::exception &e)
+    {
+        std::cout << "Erro ao carregar stopwords: " << e.what() << "\n";
+        return;
+    }
+
+    Index index;
+    Indexer indexer(index, textProcessor);
+
+    try
+    {
+        indexer.buildIndexFromDirectory(directoryPath);
+    }
+    catch (const std::exception &e)
+    {
+        std::cout << "Erro durante a indexação: " << e.what() << "\n";
+        return;
+    }
 
     Serializer serializer;
     const std::string indexFileName = "index.dat";
@@ -81,52 +106,58 @@ void CLI::handleBuildIndex(const char *directoryPathCStr)
     }
     catch (const std::exception &e)
     {
-        std::cerr << "Erro ao salvar o índice: " << e.what() << "\n";
+        std::cout << "Erro ao salvar o índice: " << e.what() << "\n";
     }
 }
 
 void CLI::handleSearch(const char *termCStr)
 {
-    std::string term = termCStr;
-    const std::string indexFileName = "index.dat";
+    std::string query = termCStr;
 
+    Index index;
     Serializer serializer;
 
-    if (!serializer.indexFileExists(indexFileName))
-    {
-        std::cerr << "Arquivo de índice '" << indexFileName << "' não encontrado.\n";
-        std::cerr << "Execute primeiro:\n";
-        std::cerr << "  indice construir <caminho_do_diretorio>\n";
-        return;
-    }
-
-    InvertedIndex index;
     try
     {
-        serializer.load(index, indexFileName);
+        serializer.load(index, "index.dat");
     }
     catch (const std::exception &e)
     {
-        std::cerr << "Erro ao carregar o índice: " << e.what() << "\n";
+        std::cout << "Erro ao carregar o índice (index.dat): " << e.what() << "\n";
         return;
     }
 
-    QueryProcessor queryProcessor;
-    queryProcessor.setIndex(index);
+    TextProcessor processor;
+    try
+    {
+        processor.loadStopwords("stopwords.txt");
+    }
+    catch (const std::exception &e)
+    {
+        std::cout << "Erro ao carregar stopwords: " << e.what() << "\n";
+        return;
+    }
 
-    auto results = queryProcessor.search(term);
+    auto tokens = processor.tokenize(query);
+    if (tokens.empty())
+    {
+        std::cout << "Consulta vazia ou composta apenas por stopwords.\n";
+        return;
+    }
+
+    const std::string &term = tokens.front();
+    auto results = index.search(term);
 
     if (results.empty())
     {
-        std::cout << "Nenhum arquivo encontrado para o termo '" << term << "'.\n";
-        std::cout << "(Ou a lógica de busca ainda não foi implementada.)\n";
+        std::cout << "Nenhum documento encontrado para o termo normalizado: " << term << "\n";
     }
     else
     {
-        std::cout << "Arquivos que contém o termo '" << term << "':\n";
-        for (const auto &file : results)
+        std::cout << "Documentos que contêm o termo '" << term << "':\n";
+        for (const auto &path : results)
         {
-            std::cout << " - " << file << "\n";
+            std::cout << " - " << path << "\n";
         }
     }
 }

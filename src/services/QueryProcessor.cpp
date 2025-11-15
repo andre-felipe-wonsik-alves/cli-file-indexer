@@ -1,7 +1,7 @@
 #include "./abstract/QueryProcessor.h"
 #include <iostream>
 
-void QueryProcessor::setIndex(const InvertedIndex &index)
+void QueryProcessor::setIndex(const Index &index)
 {
     index_ = index;
 }

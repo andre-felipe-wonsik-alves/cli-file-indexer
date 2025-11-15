@@ -2,16 +2,16 @@
 
 #include <string>
 #include <vector>
-#include "InvertedIndex.h"
+#include "Index.h"
 
 class QueryProcessor
 {
 public:
-    void setIndex(const InvertedIndex &index);
+    void setIndex(const Index &index);
 
     // Realiza a busca pelo termo e retorna lista de nomes de arquivos.
     std::vector<std::string> search(const std::string &term) const;
 
 private:
-    InvertedIndex index_;
+    Index index_;
 };
