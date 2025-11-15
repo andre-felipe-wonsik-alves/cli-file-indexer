@@ -1,5 +1,5 @@
 CXX = g++
-CXXFLAGS = -std=c++17 -Wall -Wextra -pedantic -O2
+CXXFLAGS = -std=c++17 -Wall -Wextra -pedantic -g -O0
 
 TARGET = indice
 SRCS = ./src/main.cpp \

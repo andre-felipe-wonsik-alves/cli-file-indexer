@@ -19,7 +19,7 @@ int CLI::run(int argc, char *argv[])
 
     std::string command = argv[1];
 
-    if (command == "index")
+    if (command == "construir")
     {
         if (argc < 3)
         {
@@ -32,7 +32,7 @@ int CLI::run(int argc, char *argv[])
         handleBuildIndex(directoryPath);
         return 0;
     }
-    else if (command == "search")
+    else if (command == "buscar")
     {
         if (argc < 3)
         {
