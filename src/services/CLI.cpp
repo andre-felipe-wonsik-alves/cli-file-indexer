@@ -1,11 +1,13 @@
 #include "./abstract/CLI.h"
 #include "./abstract/Index.h"
-#include "./abstract/TextProcessor.h"
 #include "./abstract/Indexer.h"
+#include "./abstract/QueryProcessor.h"
 #include "./abstract/Serializer.h"
+#include "./abstract/TextProcessor.h"
 
 #include <filesystem>
 #include <iostream>
+#include <vector>
 
 namespace fs = std::filesystem;
 
@@ -41,8 +43,7 @@ int CLI::run(int argc, char *argv[])
             return 1;
         }
 
-        const char *term = argv[2];
-        handleSearch(term);
+        handleSearch(argc, argv);
         return 0;
     }
     else
@@ -56,8 +57,8 @@ int CLI::run(int argc, char *argv[])
 void CLI::printUsage() const
 {
     std::cout << "Uso:\n"
-              << "  programa index <diretorio_txt>\n"
-              << "  programa search <termo>\n";
+              << "  programa construir <diretorio_txt>\n"
+              << "  programa buscar <termo1> [termo2 ...]\n";
 }
 
 void CLI::handleBuildIndex(const char *directoryPathCStr)
@@ -110,20 +111,25 @@ void CLI::handleBuildIndex(const char *directoryPathCStr)
     }
 }
 
-void CLI::handleSearch(const char *termCStr)
+void CLI::handleSearch(int argc, char *argv[])
 {
-    std::string query = termCStr;
+    const std::string indexFileName = "index.dat";
+    if (!fs::exists(indexFileName))
+    {
+        std::cout << "Índice não encontrado. Execute 'indice construir <diretorio>' antes de buscar.\n";
+        return;
+    }
 
     Index index;
     Serializer serializer;
 
     try
     {
-        serializer.load(index, "index.dat");
+        serializer.load(index, indexFileName);
     }
     catch (const std::exception &e)
     {
-        std::cout << "Erro ao carregar o índice (index.dat): " << e.what() << "\n";
+        std::cout << "Erro ao carregar o índice (" << indexFileName << "): " << e.what() << "\n";
         return;
     }
 
@@ -138,23 +144,31 @@ void CLI::handleSearch(const char *termCStr)
         return;
     }
 
-    auto tokens = processor.tokenize(query);
+    std::vector<std::string> tokens;
+    for (int i = 2; i < argc; ++i)
+    {
+        auto parsed = processor.tokenize(argv[i]);
+        tokens.insert(tokens.end(), parsed.begin(), parsed.end());
+    }
+
     if (tokens.empty())
     {
         std::cout << "Consulta vazia ou composta apenas por stopwords.\n";
         return;
     }
 
-    const std::string &term = tokens.front();
-    auto results = index.search(term);
+    QueryProcessor queryProcessor;
+    queryProcessor.setIndex(index);
+
+    auto results = queryProcessor.search(tokens);
 
     if (results.empty())
     {
-        std::cout << "Nenhum documento encontrado para o termo normalizado: " << term << "\n";
+        std::cout << "Nenhum documento encontrado para os termos fornecidos.\n";
     }
     else
     {
-        std::cout << "Documentos que contêm o termo '" << term << "':\n";
+        std::cout << "Documentos que contêm todos os termos informados:\n";
         for (const auto &path : results)
         {
             std::cout << " - " << path << "\n";

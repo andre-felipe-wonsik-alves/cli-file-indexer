@@ -8,5 +8,5 @@ public:
 private:
     void printUsage() const;
     void handleBuildIndex(const char *directoryPath);
-    void handleSearch(const char *term);
+    void handleSearch(int argc, char *argv[]);
 };
