@@ -1,13 +1,58 @@
 #include "./abstract/Indexer.h"
-#include <iostream>
+#include "./abstract/Index.h"
+#include "./abstract/TextProcessor.h"
 
-InvertedIndex Indexer::buildIndex(const std::string &directoryPath)
+#include <filesystem>
+#include <fstream>
+#include <sstream>
+#include <stdexcept>
+#include <unordered_set>
+
+Indexer::Indexer(Index &index, const TextProcessor &textProcessor)
+    : index_(index), textProcessor_(textProcessor) {}
+
+void Indexer::buildIndexFromDirectory(const std::string &directoryPath)
 {
-    std::cout << "[Indexer] Construção de índice ainda NÃO implementada.\n";
-    std::cout << "[Indexer] TODO: varrer o diretório '" << directoryPath
-              << "' e preencher o InvertedIndex (termo -> arquivos).\n";
+    namespace fs = std::filesystem;
 
-    InvertedIndex index;
+    fs::path dir(directoryPath);
+    if (!fs::exists(dir) || !fs::is_directory(dir))
+    {
+        throw std::runtime_error("Invalid directory: " + directoryPath);
+    }
 
-    return index;
+    index_.setBaseDirectory(fs::canonical(dir).string());
+
+    for (const auto &entry : fs::recursive_directory_iterator(dir))
+    {
+        if (entry.is_regular_file() && entry.path().extension() == ".txt")
+        {
+            indexFile(entry.path().string());
+        }
+    }
+}
+
+void Indexer::indexFile(const std::string &filePath)
+{
+    namespace fs = std::filesystem;
+
+    std::ifstream file(filePath);
+    if (!file)
+    {
+        throw std::runtime_error("Unable to open file: " + filePath);
+    }
+
+    std::ostringstream buffer;
+    buffer << file.rdbuf();
+    std::string content = buffer.str();
+
+    auto tokens = textProcessor_.tokenize(content);
+
+    std::unordered_set<std::string> uniqueTokens(tokens.begin(), tokens.end());
+
+    std::string filename = fs::path(filePath).filename().string();
+    for (const auto &token : uniqueTokens)
+    {
+        index_.addToken(token, filename);
+    }
 }
