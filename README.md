@@ -16,6 +16,11 @@ Isso gerará um arquivo index.dat na saída.
 ```sh
 ./indice busca <palavra 1> <palavra 2> ... <palavra $N$>
 ```
-
 Isso retornará uma lista dos arquivos que contém essas palavras.
 
+# Topologia
+## Indexação e Serialização dos documentos
+![Diagrama C4](<assets/CLI - File Indexer - Construir.png>)
+
+## Busca dos documentos
+![alt text](<assets/CLI - File Indexer - Busca.drawio.png>)
