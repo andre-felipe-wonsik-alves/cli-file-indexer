@@ -28,7 +28,7 @@ void Serializer::save(const Index &index, const std::string &filepath) const
     std::ofstream os(filepath, std::ios::binary);
     if (!os)
     {
-        throw std::runtime_error("Unable to open index file for writing: " + filepath);
+        throw std::runtime_error("Não foi possível escrever no índice: " + filepath);
     }
 
     const std::uint32_t magic = 0x58444E49;
@@ -75,7 +75,7 @@ void Serializer::load(Index &index, const std::string &filepath) const
     std::ifstream is(filepath, std::ios::binary);
     if (!is)
     {
-        throw std::runtime_error("Unable to open index file for reading: " + filepath);
+        throw std::runtime_error("Não foi possível ler o índice: " + filepath);
     }
 
     std::uint32_t magic = 0;
@@ -86,12 +86,12 @@ void Serializer::load(Index &index, const std::string &filepath) const
 
     if (magic != 0x58444E49)
     {
-        throw std::runtime_error("Invalid index file (magic mismatch)");
+        throw std::runtime_error("Arquivo index inválido");
     }
 
     if (version != 1)
     {
-        throw std::runtime_error("Unsupported index version");
+        throw std::runtime_error("Versão inválida do index");
     }
 
     index.clear();

@@ -13,7 +13,8 @@ std::vector<std::string> QueryProcessor::search(const std::string &term) const
 {
     if (term.empty())
     {
-        return {};
+        std::vector<std::string> vec = {"Erro em algo nerd"};
+        return vec;
     }
     return search(std::vector<std::string>{term});
 }
@@ -22,8 +23,8 @@ std::vector<std::string> QueryProcessor::search(const std::vector<std::string> &
 {
     if (!index_)
     {
-        std::cout << "QueryProcessor index not set" << "\n";
-        return;
+        std::vector<std::string> vec = {"Erro em algo nerd"};
+        return vec;
     }
 
     std::vector<std::string> filteredTerms;

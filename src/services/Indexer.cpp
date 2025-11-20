@@ -18,7 +18,7 @@ void Indexer::buildIndexFromDirectory(const std::string &directoryPath)
     fs::path dir(directoryPath);
     if (!fs::exists(dir) || !fs::is_directory(dir))
     {
-        throw std::runtime_error("Invalid directory: " + directoryPath);
+        throw std::runtime_error("Diretório inválido: " + directoryPath);
     }
 
     index_.setBaseDirectory(fs::canonical(dir).string());
@@ -39,7 +39,7 @@ void Indexer::indexFile(const std::string &filePath)
     std::ifstream file(filePath);
     if (!file)
     {
-        throw std::runtime_error("Unable to open file: " + filePath);
+        throw std::runtime_error("Não foi possível abrir o arquivo: " + filePath);
     }
 
     std::ostringstream buffer;

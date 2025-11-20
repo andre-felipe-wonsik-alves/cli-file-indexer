@@ -28,7 +28,7 @@ const std::string &Index::getDocumentName(DocumentId id) const
 {
     if (id >= idToFilename_.size())
     {
-        throw std::out_of_range("Invalid document ID");
+        throw std::out_of_range("O ID do documento é inválido");
     }
     return idToFilename_[id];
 }

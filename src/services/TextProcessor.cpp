@@ -9,7 +9,7 @@ void TextProcessor::loadStopwords(const std::string &filepath)
     std::ifstream file(filepath);
     if (!file)
     {
-        throw std::runtime_error("Unable to open stopwords file: " + filepath);
+        throw std::runtime_error("Não foi possível abrir o arquivo: " + filepath);
     }
 
     std::string word;
